@@ -1,4 +1,5 @@
 \input{pre}
+\usepackage{alltt}
 \begin{document}
 \begin{flushright}
 	{\footnotesize Г. Мороз, а. Ходзь, Республика Адыгея}
@@ -18,7 +19,7 @@
 {~}\\
 \pagebreak
 \section{Введение}
-\noindent Судя по всему, о скорости речи говорили еще в начале XX века, но первые квантитативные исследования, начались, видимо, с работ \citep{goldman54} и \citep{goldman56}; и с самых ранних работ данная тема затрагивала еще и некоторые аспекты психиатрии.
+\noindent Судя по всему, о скорости речи говорили еще в начале XX века, но первые квантитативные исследования, начались, видимо, с работ \citep{goldman54} и \citep{goldman56}; и с самых ранних работ данная тема затрагивала еще и некоторые аспекты психиатрии. Данная тема тесно соприкасается с разницей ударных и безударных слогов, а также ритмической структуры слова, фразы и т. п.
 \par В исследовании \citep{goldman54} исследовались по три интервью от пяти пациентов, собранных тремя психиатрами. В качестве характеристики скорости речи используется количество слов в минуту и стандартное отклонение полученной величины. В следующей работе \citep{goldman56} автор был более эксплицитен и ввел некоторые важные понятия:
 \begin{itemize}
 \mytem общая скорость речи (total or overall Speech Rate), которая высчитывается по формуле ${ns}/t$, где ${ns}$ --- это количество слогов во всех высказываниях, a $t$ --- общая длительность всех высказываний.
@@ -27,14 +28,16 @@
 \mytem скорость дыхания (Respiration Rate), которая по формуле $ni/t$, где ${ni}$ --- это количество вдохов во всех высказываниях, a $t$ --- общая длительность всех высказываний.
 \end{itemize}
 \par Среди результатов работы \citep{goldman56} отмечается отрицательная корреляция между общей скоростью речи и пропорциональной длительностью пауз, т. е. чем длиннее и чем дольше паузы, тем меньше общая скорость речи. В исследовании также подчеркивается, что скорость дыхания, измеряемая в процессе речи, отличается от действительной скорости дыхания, так как в ней происходит выдыхательная задержка, вызванная процессом речепроизводства.
-\par \citep{fonagy60}
+\par Работа \citep{fonagy60} начинается с перечислении идей разных фонетистов о разной скорости, с которой произносятся слова разной длины: длинные слова произносятся быстрее, короткие слова --- медленнее. Потом автор переходит к единицам, которые он называет \textit{ритмическим периодом} (rhythmical period). Автор показывает, что связь между \textbf{средней длиной звука в ритмической единице} экспоненциально зависит от количества звуков в данной единице. В данной работе тоже анализировалось дыхание, а именно информанты читали текст, а исследователь смотрел, где происходит вдох. Длинна ритмической единицы, а следовательно, как считает автор, и скорость, зависят от речевого материала (поэзия, проза, диалог, спортивный комментарий и т. п.), а увеличение скорости в более длинных единицах не связано с дыхательными циклами. 
 \par \citep{osser64}
 \par \citep{barik77}
 \par \citep{vaane82}
 \par \citep{brown85}
+\par \citep{tauroza90}
 \par \citep{uhmann92}
 \par \citep{zellner94}
-\par \citep{roach98}
+\par \citep{arnfield95}
+\par Работа \citep{roach98} написана 
 \par \citep{dellwo03}
 \par \citep{pellegrino04} и \citep{pellegrino11}
 \par \citep{hilton11}
@@ -44,6 +47,8 @@
 \par \citep{bosker15}
 \par \citep{bosker16}
 \section{Ход эксперимента}
+\noindent …
+\par Записанные тексты разбирались в ELAN (v. 4.9.4), потом создавался слой с количеством слогов и экспортировался в файл .TextGrid (файл для аннотации файлов в Praat). Далее в Praat (v. 5.3.16) скриптами собиралась информация о длительности всех сегментов в отдельный файл .csv, который потом анализировался в R (v. 3.3.1).
 \section{мысли}
 \begin{itemize}
 \mytem не только все усреднить --- скользящее среднее покажет изменении скорости по ходу рассказа
@@ -92,6 +97,81 @@
 Iухуакъэ, ишхыр хъунущ мафIэ.\medskip\\
 \textit{Алим КIыщокъуэ, Тхыгъэхэр, томихым щызэхуэхьэсауэ ---  Налщык: <<Эльбрус>>, 2004. --- н. 147}
 \pagebreak
-\subsection{Приложение 3: код в PRAAT}
-\subsection{Приложение 4: код в R}
+\subsection{Приложение 3: код в Praat (v. 5.3.16)}
+\noindent Данный скрипт был написан Mietta Lennes, однако я несколько изменил его для своего удобства. Теперь он вытаскивает название всех фрагментов (в случае паузы название отсутствует), длительность, время начала фрагмента и время конца фрагмента.
+\scriptsize
+\begin{alltt}
+# This script is distributed under the GNU General Public License.
+# Copyright 17.3.2002 Mietta Lennes
+
+form Make text file from an IntervalTier in the selected TextGrid object
+	comment Which tier do you want to convert to text?
+	integer Tier 1
+	comment Where do you want to save the text file?
+	text path /home/agricolamz/_DATA/OneDrive1/_Work/duration.txt
+endform
+
+overwrite = 0
+
+numberOfIntervals = Get number of intervals... tier
+
+for interval from 1 to numberOfIntervals
+	start = Get starting point... tier interval
+	end = Get end point... tier interval
+	duration = end - start
+	label$ = Get label of interval... tier interval
+	if fileReadable (path$) and overwrite = 0 and interval = 1
+		pause There already is a text file 'path$'. Do you want to continue and overwrite it?
+		overwrite = 1
+		filedelete 'path$'
+	endif
+	textline$ = "'label$''tab$''duration''tab$''start''tab$''end''newline$'"
+	fileappend 'path$' 'textline$'
+endfor
+
+echo Created a text file 'path$' for the segments and labels in tier 'tier'
+
+# the end of the script
+\end{alltt}
+\normalsize
+\pagebreak
+\subsection{Приложение 4: код в R (v. 3.3.1)}
+\noindent Данный скрипт принимает на вход данные полученные скриптом Praat, считает общую скорость речи (speach.rate) и скорость артикуляции (articulation.rate) и рисует график, отображающий изменение скорости речи во время речепроизводства.
+\scriptsize
+\begin{alltt}
+# get file ----------------------------------------------------------------
+setwd("/home/agricolamz/_DATA/OneDrive1/_Work/_Handouts/2016 II Adyghe expedition/test from mashe")
+df <- read.csv("duration.txt", sep = "\t", header = F)
+names(df) <- c("number.of.syllables",
+               "duration",
+               "start",
+               "end")
+df <- df[-1,]
+df[is.na(df$number.of.syllables),]$number.of.syllables <- 0
+
+# segments without pauses
+dfnp <- df[df$number.of.syllables > 0,]
+dfnp <- dfnp[complete.cases(dfnp),]
+
+# speach rate and articulation rate ---------------------------------------
+speach.rate <- sum(df$number.of.syllables,na.rm = T)/df$end[nrow(df)]
+articulation.rate <- sum(dfnp$number.of.syllables, na.rm = T)/dfnp$end[nrow(dfnp)]
+
+# moving average ----------------------------------------------------------
+width <- 15 # width of the moving average
+
+mmean <- rollapply(df$number.of.syllables, width, FUN = mean)
+mduration <- rollapply(df$duration, width, FUN = mean)
+
+dfmmean <- data.frame(x = df$end[1:length(mmean)],
+                      res = mmean/mduration)
+
+ggplot(df, aes(end, number.of.syllables))+
+  geom_point()+
+  geom_line(data = dfmmean, aes(x, res))+
+  theme_bw()+
+  ylab("количество слогов")+
+  xlab("время (c)")
+\end{alltt}
+\normalsize
 \end{document}
