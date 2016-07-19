@@ -152,7 +152,7 @@ all & 4.153892 & ±0.1345448 & 0.9994908 \\ \hline
 \caption{полученные значения}        
 \end{subfigure}
 \caption{Скорость чтения прозаического текста каждым информантом (D1-D9) и всеми вместе (all)}
-\label{verseboxplot}
+\label{proseboxplot}
 \end{figure}
 \par На рисунке (\ref{verseboxplot}) представлены результаты измерений скорости чтения прозаического текста. В целом, все информанты кроме четвертого читали прозаический текст быстрее, чем стихотворный. Скорость в среднем больше на 0.49 слога в секунду (от 0.20 слога в секунду до 1 слога в секунду). Кроме того больше и стандартное отклонение: в среднем на 0.42 слога в секунду (от 0.25 слога в секунду до 0.59 слога в секунду). Средняя скорость чтения стихотворения составила 4.15 слога в секунду c 95\% доверительным интервалом равным 0.13 и стандартным отклонением в 1 слог в секунду.
 \subsection{Сравнение разных методов измерения скорости речи}
@@ -248,45 +248,70 @@ endfor
 \normalsize
 \pagebreak
 \subsection{Приложение 5: код в R (v. 3.3.1)} \label{Rscript}
-\noindent Данный скрипт принимает на вход данные полученные скриптом Praat, считает общую скорость речи (speach.rate) и скорость артикуляции (articulation.rate) и рисует график, отображающий изменение скорости речи во время речепроизводства.
+\noindent Данный скрипт принимает на вход данные полученные скриптом Praat и считает результаты для рисунка \ref{verseboxplot}.
 \scriptsize
 \begin{alltt}
-# get file ----------------------------------------------------------------
-setwd("/home/agricolamz/_DATA/OneDrive1/_Work/_Handouts/2016 II Adyghe expedition/test from mashe")
-df <- read.csv("duration.txt", sep = "\t", header = F)
-names(df) <- c("number.of.syllables",
+df <- read.csv("https://goo.gl/tz50SW", sep = "\t", header = F)
+names(df) <- c("dictor",
+               "number.of.syllables",
                "duration",
                "start",
                "end")
-df <- df[-1,]
-df[is.na(df$number.of.syllables),]$number.of.syllables <- 0
 
-# segments without pauses
-dfnp <- df[df$number.of.syllables > 0,]
-dfnp <- dfnp[complete.cases(dfnp),]
+dfall <- df
+dfall$dictor <- "all"
+dfall <- rbind.data.frame(df, dfall)
 
-# speach rate and articulation rate (syllables / min) ---------------------
-speach.rate <- sum(df$number.of.syllables,na.rm = T)/df$end[nrow(df)]*60
-articulation.rate <- sum(dfnp$number.of.syllables, na.rm = T)/dfnp$end[nrow(dfnp)]*60
-
-# moving average ----------------------------------------------------------
-width <- 15 # width of the moving average
-
-library(zoo)
-mmean <- rollapply(df$number.of.syllables, width, FUN = mean)
-mduration <- rollapply(df$duration, width, FUN = mean)
-
-dfmmean <- data.frame(x = df$end[1:length(mmean)],
-                      res = mmean/mduration)
+articulation.rate <- cbind.data.frame(dfall$dictor, dfall$number.of.syllables/dfall$duration*1000)
+names(articulation.rate) <- c("dictor", "art.rate")
+rate.speaker <- c(by(articulation.rate$art.rate, articulation.rate$dictor, mean))
+rate.speaker <- as.data.frame(rate.speaker)
+rate.speaker$ci <- c(by(articulation.rate$art.rate, articulation.rate$dictor, 
+                        function(x){1.96*sd(x)/sqrt(length(x))}))
+rate.speaker$sd <- c(by(articulation.rate$art.rate, articulation.rate$dictor, 
+                        sd))
 
 library(ggplot2)
-ggplot(df, aes(end, number.of.syllables))+
-  geom_point()+
-  geom_line(data = dfmmean, aes(x, res))+
-  theme_bw()+
-  ylab("количество слогов")+
-  xlab("время (c)")
+ggplot(dfall, aes(dictor, number.of.syllables/duration*1000))+
+  geom_boxplot()+
+  ylab("количество слогов в секунду")+
+  xlab("диктор")+
+  ggtitle("Скорость чтения стихотворения")+
+  theme_bw()
+\end{alltt}
+\normalsize
+\noindent Данный скрипт принимает на вход данные полученные скриптом Praat и считает результаты для рисунка \ref{proseboxplot}.
+\scriptsize
+\begin{alltt}
+setwd("/home/agricolamz/_DATA/OneDrive1/_Work/_Handouts/2016 II Adyghe expedition/audio")
+df <- read.csv("durations_of_prose.txt", sep = "\t", header = F)
+names(df) <- c("dictor",
+               "number.of.syllables",
+               "duration",
+               "start",
+               "end")
 
+dfall <- df
+dfall$dictor <- "all"
+dfall <- rbind.data.frame(df, dfall)
+
+articulation.rate <- cbind.data.frame(dfall$dictor, dfall$number.of.syllables/dfall$duration*1000)
+names(articulation.rate) <- c("dictor", "art.rate")
+rate.speaker <- c(by(articulation.rate$art.rate, articulation.rate$dictor, mean))
+rate.speaker <- as.data.frame(rate.speaker)
+rate.speaker$ci <- c(by(articulation.rate$art.rate, articulation.rate$dictor, 
+                        function(x){1.96*sd(x)/sqrt(length(x))}))
+rate.speaker$sd <- c(by(articulation.rate$art.rate, articulation.rate$dictor, 
+                        sd))
+
+
+library(ggplot2)
+ggplot(dfall, aes(dictor, number.of.syllables/duration*1000))+
+  geom_boxplot()+
+  ylab("количество слогов в секунду")+
+  xlab("диктор")+
+  ggtitle("Скорость чтения прозаического текста")+
+  theme_bw()
 # the end of the script
 \end{alltt}
 \normalsize
@@ -294,9 +319,10 @@ ggplot(df, aes(end, number.of.syllables))+
 \subsection{Приложение 6: разбор записанных нарративов} \label{corpus}
 \input{corpus}
 \pagebreak
-\subsection{Приложение 7: raw data для исследования длительности нарративов} \label{corpus}
+\subsection{Приложение 7: raw data для исследования длительности нарративов} \label{corpus.raw}
 \pagebreak
-\subsection{Приложение 8: raw data для исследования длительности в стихах} \label{corpus}
+\subsection{Приложение 8: raw data для исследования длительности в стихах} \label{verse.raw}
 \input{duration.verse.raw.data.tex}
-\subsection{Приложение 9: raw data для исследования длительности в прозаическом тексте} \label{corpus}
+\subsection{Приложение 9: raw data для исследования длительности в прозаическом тексте} \label{prose.raw}
+\input{duration.prose.raw.data.tex}
 \end{document}
